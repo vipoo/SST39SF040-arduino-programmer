@@ -1,6 +1,8 @@
 import SerialPort from 'serialport'
 import commander from 'commander'
+import fs from 'fs'
 
+const BUFFER_SIZE = 16
 
 function read({port, baud}) {
   const connection = new SerialPort(port, {
@@ -12,15 +14,20 @@ function read({port, baud}) {
 
   let allData = ''
 
+  let i = 0
+
   connection.on('data', function (data) {
-    process.stdout.write('.')
+    if (i++ > 100) {
+      i = 0
+      console.log(allData.length)
+    }
 
     allData += data.toString()
 
     if(allData.endsWith('=')) {
       const buff = new Buffer(allData, 'base64')
-      let text = buff.toString('ascii')
-      console.log(`\n---\n${text}\n--`)
+      fs.writeFileSync('./data.rom', buff)
+      console.log('data written to data.rom', buff.length)
       connection.close()
     }
 
@@ -34,23 +41,73 @@ function read({port, baud}) {
   })
 }
 
-function write({port, baud}) {
+function onSingleChars(connection, cb) {
+  function capture(res) {
+    for (const char of res.toString())
+      if(cb(char)) {
+        connection.removeListener('data', capture)
+        break
+      }
+  }
+
+  connection.on('data', capture)
+}
+
+function write({port, baud}, {file}) {
   const connection = new SerialPort(port, {
     baudRate: baud
   })
 
   let allData = ''
+  let expectedNextChar
+
+  console.log('Reading data from file ', file)
+  let data = fs.readFileSync(file)
+  data = data.slice(0, 1024*4)
+  const encodedData = `${data.toString('base64')}===`
+
+  let index = 0
+
+  console.log('Length encoded:', encodedData.length)
+
+  function sendAllData() {
+    onSingleChars(connection, char => {
+
+      if (index === encodedData.length) {
+        console.log('All data sent.')
+        return true
+      }
+
+      if (char === '=') {
+        console.log('all data sent.')
+        return true
+      }
+
+      for(let i = 0; i < BUFFER_SIZE; i++) {
+        if (index == encodedData.length)
+          break
+
+        connection.write(encodedData[index])
+        index++
+      }
+
+      if (index % 1000 === 0)
+        process.stdout.write('.')
+
+      return false
+    })
+
+    connection.write('W')
+  }
 
   connection.on('data', function (data) {
-    process.stdout.write(data.toString())
-
     allData += data.toString()
+
+    process.stdout.write(data.toString())
 
     if(allData.includes('ACK-READY-ACK')) {
       allData = ''
-      connection.write('W')
-
-      connection.write('VGhpcyBpcyBhIHRlc3Q=')
+      sendAllData()
     }
 
     if(allData.includes('ACK-DONE-ACK')) {
@@ -78,5 +135,3 @@ commander
 
 commander.parse(process.argv)
 
-
-//main(commander)

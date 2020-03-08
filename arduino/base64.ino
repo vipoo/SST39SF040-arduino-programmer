@@ -5,20 +5,18 @@ typedef void writeAChar(char);
 typedef char readAChar();
 typedef void writeAByte(byte, unsigned long);
 
-#define BLOCK_LENGTH 14
-//(512 * 1024)
+#define BLOCK_LENGTH 1024 * 10 // (1024L * 512)
 
 const char PROGMEM _Base64AlphabetTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		"abcdefghijklmnopqrstuvwxyz"
 		"0123456789+/";
 
 void base64Encode(readAByte reader, writeAChar writer) {
-	int i = 0, j = 0;
-	int encodedLength = 0;
+	byte i = 0, j = 0;
 	unsigned char A3[3];
 	unsigned char A4[4];
-  unsigned int inputLength = BLOCK_LENGTH;
-  unsigned int address = 0;
+  unsigned long inputLength = BLOCK_LENGTH;
+  unsigned long address = 0;
 
 	while(inputLength--) {
 		A3[i++] = reader(address++);
@@ -47,8 +45,7 @@ void base64Encode(readAByte reader, writeAChar writer) {
 }
 
 void base64Decode(readAChar reader, writeAByte writer) {
-	int i = 0, j = 0;
-	int decodedLength = 0;
+	byte i = 0, j = 0;
 	unsigned char A3[3];
 	unsigned char A4[4];
   unsigned long address = 0;

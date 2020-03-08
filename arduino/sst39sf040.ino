@@ -6,8 +6,7 @@ const int AddrPins[] = {
   A0, A1, A2, AB3, AB4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18
 };
 
-byte data[2];
-unsigned char base64[9];
+#define BUFFER_SIZE 128
 
 void setCtrlPins();                                   //Setup control signals
 void setAddrPinsOut();                                //Setup address signals
@@ -31,6 +30,7 @@ void setup()
   Serial.begin(115200);
   delay(2);
   Serial.println("ACK-READY-ACK");
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {
@@ -46,23 +46,44 @@ void readSerialCommand(byte in) {
 
     case 'W': {
       eraseChip();
-      Serial.println("Chip Erased.");
+      Serial.write('A');
       base64Decode(readChar, programData);
+      Serial.write('A');
       Serial.println("\nACK-DONE-ACK");
       return;
     }
+
+    case '=':
+      return;
   }
 
-  Serial.print("Error");
+  Serial.print("Error ");
+  Serial.print((char)in);
+  Serial.println();
 }
 
+int wasBelow = false;
 
 char readChar() {
-  char b = -1;
+  int count = Serial.available();
 
+  if (count < 12 && !wasBelow) {
+    Serial.write('X');
+    digitalWrite(LED_BUILTIN, HIGH);
+    wasBelow = true;
+  } else if (count >= 12) {
+    digitalWrite(LED_BUILTIN, LOW);
+    wasBelow = false;
+  }
+
+  int waitSet = 0;
   while(Serial.available() == 0) {
-    Serial.write('.');
-    delay(300);
+    delay(3);
+    if (waitSet == 0)
+      Serial.write('Y');
+    waitSet++;
+    if(waitSet > 50)
+      waitSet = 0;
   }
 
   return Serial.read();
@@ -116,6 +137,8 @@ void writeByte(byte data, unsigned long address) {
   delayMicroseconds(1);
   digitalWrite(WE, HIGH);
 }
+
+int marker = 0;
 
 void programData(byte data, unsigned long address) {
   setDigitalOut();
