@@ -5,7 +5,7 @@ typedef void writeAChar(char);
 typedef char readAChar();
 typedef void writeAByte(byte, unsigned long);
 
-#define BLOCK_LENGTH 1024 * 10 // (1024L * 512)
+#define BLOCK_LENGTH 1024L * 512 // (1024L * 512)
 
 const char PROGMEM _Base64AlphabetTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		"abcdefghijklmnopqrstuvwxyz"

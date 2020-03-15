@@ -40,7 +40,25 @@ void loop() {
 
 void readSerialCommand(byte in) {
   switch (in)  {
+    case 'A':
+      setDigitalIn();
+
+      readFirst10Bytes();
+      return;
+
+    case 'B':
+      writeFirst10Bytes();
+      Serial.println("10 bytes written");
+      return;
+
+    case 'E':
+      eraseChip();
+      Serial.println("Chip erased.");
+      return;
+
     case 'R':
+      setDigitalIn();
+
       base64Encode(readData, sendChar);
       return;
 
@@ -107,12 +125,36 @@ void eraseChip() {
   setDigitalIn();
 }
 
+void readFirst10Bytes() {
+  Serial.println("Reading first 10 bytes:");
+  for(long i = 0; i < 10; i++) {
+    const byte b = readData(i);
+    String stringOne =  String(b, HEX);
+    Serial.print(stringOne);
+    Serial.print(" ");
+  }
+
+  Serial.println("\r\nDone.");
+}
+
+void writeFirst10Bytes() {
+  programData('a', 0L);
+  programData('b', 1L);
+  programData('c', 2L);
+  programData('d', 3L);
+  programData('e', 4L);
+  programData('f', 5L);
+  programData('g', 6L);
+  programData('h', 7L);
+  programData('i', 8L);
+  programData('j', 9L);
+}
+
 byte readData(unsigned long address) {
   byte temp_read;
-  setDigitalIn();
 
-  digitalWrite(WE, HIGH);
-  digitalWrite(OE, HIGH);
+  //digitalWrite(WE, HIGH);
+  //digitalWrite(OE, HIGH);
 
   setAddress(address);
 
@@ -191,7 +233,9 @@ void setDigitalIn() {
 void setCtrlPins() {
   pinMode(WE, OUTPUT);
   pinMode(OE, OUTPUT);
+  pinMode(CE, OUTPUT);
 
   digitalWrite(WE, HIGH);
   digitalWrite(OE, HIGH);
+  digitalWrite(CE, LOW);
 }

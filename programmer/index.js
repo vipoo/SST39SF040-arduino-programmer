@@ -1,10 +1,38 @@
 import SerialPort from 'serialport'
 import commander from 'commander'
 import fs from 'fs'
+import ora from 'ora'
 
 const BUFFER_SIZE = 16
 
+function onMessage(connection, test, fn) {
+  let allData = ''
+  connection.on('data', d => {
+    allData += d.toString()
+    if(test(allData))
+      fn(allData)
+  })
+}
+
+function onFirstMessage(connection, test, fn) {
+  let allData = ''
+  function handler(d) {
+    allData += d.toString()
+    if(test(allData)) {
+      connection.removeListener('data', handler)
+      fn(allData)
+    }
+  }
+  connection.on('data', handler)
+}
+
+async function connectionWrite(connection, char) {
+  return new Promise((res, rej) => connection.write('R', err => err ? rej(err) : res()))
+}
+
 function read({port, baud}) {
+  const spinner = ora('Initiating connection to programmer').start();
+
   const connection = new SerialPort(port, {
     baudRate: baud,
     dataBits: 8,
@@ -12,32 +40,25 @@ function read({port, baud}) {
     parity: 'none',
   })
 
-  let allData = ''
-
-  let i = 0
-
-  connection.on('data', function (data) {
-    if (i++ > 100) {
-      i = 0
-      console.log(allData.length)
-    }
-
-    allData += data.toString()
-
-    if(allData.endsWith('=')) {
-      const buff = new Buffer(allData, 'base64')
-      fs.writeFileSync('./data.rom', buff)
-      console.log('data written to data.rom', buff.length)
-      connection.close()
-    }
-
-    if(allData.includes('ACK-READY-ACK')) {
-      allData = ''
-      connection.write('R', err => {
-        if (err)
-          return console.log('Error on write: ', err.message)
+  onFirstMessage(connection, d => d.includes('ACK-READY-ACK'), async () => {
+      spinner.text = 'ROM Ready.'
+      onMessage(connection, d => d.endsWith('='), allData => {
+        const buff = new Buffer(allData, 'base64')
+        fs.writeFileSync('/tmp/data.rom', buff)
+        spinner.succeed(`${buff.length} bytes written to /tmp/data.rom`)
+        connection.close()
       })
-    }
+
+      await connectionWrite(connection, 'R')
+    })
+
+  let length = 0
+  let i = 0
+  connection.on('data', async function (data) {
+    length += data.length
+
+    if ((i++ % 100) === 0)
+      spinner.text = `Read ${length} bytes`
   })
 }
 
