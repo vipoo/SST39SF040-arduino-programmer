@@ -1,3 +1,5 @@
+#include "digitalWriteFast.h"
+
 const int DataPins[] = {
   D0, D1, D2, D3, D4, D5, D6, D7
 };
@@ -156,14 +158,14 @@ byte readData(unsigned long address) {
   //digitalWrite(WE, HIGH);
   //digitalWrite(OE, HIGH);
 
-  setAddress(address);
+  setAddressFast(address);
 
-  digitalWrite(OE, LOW);
+  digitalWriteFast(OE, LOW);
   delayMicroseconds(1);
 
-  temp_read = readByte();
+  temp_read = readByteFast();
 
-  digitalWrite(OE, HIGH);
+  digitalWriteFast(OE, HIGH);
 
   return temp_read;
 }
@@ -203,6 +205,29 @@ byte readByte() {
   return temp_in;
 }
 
+byte readByteFast() {
+  byte temp_in = 0;
+
+  if(digitalReadFast(D0))
+    bitSet(temp_in, 0);
+  if(digitalReadFast(D1))
+    bitSet(temp_in, 1);
+  if(digitalReadFast(D2))
+    bitSet(temp_in, 2);
+  if(digitalReadFast(D3))
+    bitSet(temp_in, 3);
+  if(digitalReadFast(D4))
+    bitSet(temp_in, 4);
+  if(digitalReadFast(D5))
+    bitSet(temp_in, 5);
+  if(digitalReadFast(D6))
+    bitSet(temp_in, 6);
+  if(digitalReadFast(D7))
+    bitSet(temp_in, 7);
+
+  return temp_in;
+}
+
 void setByte(byte out) {
   for (int i = 0; i < 8; i++)
     digitalWrite( DataPins[i], bitRead(out, i) );
@@ -211,6 +236,106 @@ void setByte(byte out) {
 void setAddress(unsigned long addr) {
   for (int i = 0; i < 19; i++)
     digitalWrite( AddrPins[i], bitRead(addr, i) );
+}
+
+void setAddressFast(unsigned long addr) {
+  if(bitRead(addr, 0))
+    digitalWriteFast(A0, HIGH)
+  else
+    digitalWriteFast(A0, LOW);
+
+  if(bitRead(addr, 1))
+    digitalWriteFast(A1, HIGH)
+  else
+    digitalWriteFast(A1, LOW);
+
+  if(bitRead(addr, 2))
+    digitalWriteFast(A2, HIGH)
+  else
+    digitalWriteFast(A2, LOW);
+
+  if(bitRead(addr, 3))
+    digitalWriteFast(AB3, HIGH)
+  else
+    digitalWriteFast(AB3, LOW);
+
+  if(bitRead(addr, 4))
+    digitalWriteFast(AB4, HIGH)
+  else
+    digitalWriteFast(AB4, LOW);
+
+  if(bitRead(addr, 5))
+    digitalWriteFast(A5, HIGH)
+  else
+    digitalWriteFast(A5, LOW);
+
+  if(bitRead(addr, 6))
+    digitalWriteFast(A6, HIGH)
+  else
+    digitalWriteFast(A6, LOW);
+
+  if(bitRead(addr, 7))
+    digitalWriteFast(A7, HIGH)
+  else
+    digitalWriteFast(A7, LOW);
+
+  if(bitRead(addr, 8))
+    digitalWriteFast(A8, HIGH)
+  else
+    digitalWriteFast(A8, LOW);
+
+  if(bitRead(addr, 9))
+    digitalWriteFast(A9, HIGH)
+  else
+    digitalWriteFast(A9, LOW);
+
+  if(bitRead(addr, 10))
+    digitalWriteFast(A10, HIGH)
+  else
+    digitalWriteFast(A10, LOW);
+
+  if(bitRead(addr, 11))
+    digitalWriteFast(A11, HIGH)
+  else
+    digitalWriteFast(A11, LOW);
+
+  if(bitRead(addr, 12))
+    digitalWriteFast(A12, HIGH)
+  else
+    digitalWriteFast(A12, LOW);
+
+  if(bitRead(addr, 13))
+    digitalWriteFast(A13, HIGH)
+  else
+    digitalWriteFast(A13, LOW);
+
+  if(bitRead(addr, 14))
+    digitalWriteFast(A14, HIGH)
+  else
+    digitalWriteFast(A14, LOW);
+
+  if(bitRead(addr, 15))
+    digitalWriteFast(A15, HIGH)
+  else
+    digitalWriteFast(A15, LOW);
+
+  if(bitRead(addr, 16))
+    digitalWriteFast(A16, HIGH)
+  else
+    digitalWriteFast(A16, LOW);
+
+  if(bitRead(addr, 17))
+    digitalWriteFast(A17, HIGH)
+  else
+    digitalWriteFast(A17, LOW);
+
+  if(bitRead(addr, 18))
+    digitalWriteFast(A18, HIGH)
+  else
+    digitalWriteFast(A18, LOW);
+
+
+
 }
 
 void setAddrPinsOut() {
