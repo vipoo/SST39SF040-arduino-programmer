@@ -1,76 +1,11 @@
-import SerialPort from 'serialport'
 import commander from 'commander'
 import fs from 'fs'
 import ora from 'ora'
 import cliProgress from 'cli-progress'
-import chalk from 'chalk'
-import x from 'cli-progress/lib/formatter.js'
+import cliDefaultFormatter from 'cli-progress/lib/formatter.js'
+import {BLOCK_LENGTH, BUFFER_SIZE} from './constants.js'
+import {startConnection, onMessage, captureData, onFirstMessage, connectionWrite, onSingleChars} from './communications.js'
 
-const {blackBright, green, yellow} = chalk
-
-const BUFFER_SIZE = 16
-
-const BLOCK_LENGTH = 1024 * 8
-
-function onMessage(connection, test, fn) {
-  let allData = ''
-  connection.on('data', d => {
-    allData += d.toString()
-    if(test(allData))
-      fn(allData)
-  })
-}
-
-
-function captureData(connection) {
-  return new Promise((res, rej) => {
-    let allData = Buffer.alloc(BLOCK_LENGTH)
-    let pointer = 0
-    connection.on('data', d => {
-      d.copy(allData, pointer)
-      pointer += d.length
-      if(pointer >= BLOCK_LENGTH)
-        res(allData)
-    })
-  })
-}
-
-function onFirstMessage(connection, test, fn) {
-  let allData = ''
-  function handler(d) {
-    allData += d.toString()
-    if(test(allData)) {
-      connection.removeListener('data', handler)
-      fn(allData)
-    }
-  }
-  connection.on('data', handler)
-}
-
-async function connectionWrite(connection, char) {
-  return new Promise((res, rej) => connection.write(char, err => err ? rej(err) : res()))
-}
-
-function startConnection({port, baud}) {
-  const spinner = ora('Initiating connection to programmer').start();
-
-  const connection = new SerialPort(port, {
-    baudRate: baud,
-    dataBits: 8,
-    stopBits: 1,
-    parity: 'none',
-  })
-
-  const ready = new Promise(res => {
-    onFirstMessage(connection, d => d.includes('ACK-READY-ACK'), async () => {
-      spinner.text = 'ROM Ready.'
-
-      res()
-    })
-  })
-
-  return {spinner, connection, ready}
-}
 
 function read(options, {file}) {
   const {spinner, connection, ready} = startConnection(options)
@@ -94,7 +29,8 @@ function read(options, {file}) {
   let length = 0
   connection.on('data', data => {
     length += data.length
-    length = Math.max(data.length, BLOCK_LENGTH)
+    if(data.length > BLOCK_LENGTH)
+      data.length = BLOCK_LENGTH
 
     bar1.update(length)
   })
@@ -139,24 +75,12 @@ function verify(options, {file}) {
   let length = 0
   connection.on('data', data => {
     length += data.length
-    length = Math.max(data.length, BLOCK_LENGTH)
+    if(data.length > BLOCK_LENGTH)
+      data.length = BLOCK_LENGTH
 
     bar1.update(length)
   })
 }
-
-function onSingleChars(connection, cb) {
-  function capture(res) {
-    for (const char of res.toString())
-      if(cb(char)) {
-        connection.removeListener('data', capture)
-        break
-      }
-  }
-
-  connection.on('data', capture)
-}
-
 
 function write(options, {file, verify: verifyAfterWrite}) {
   const spinner1 = ora(`Reading file ${file}`).start();
@@ -169,7 +93,7 @@ function write(options, {file, verify: verifyAfterWrite}) {
 
   function formatter(options, params, payload) {
     options.format = `${payload.serialStatus} progress [{bar}] {percentage}% | {value}/{total}`
-    return x(options, params, payload)
+    return cliDefaultFormatter(options, params, payload)
   }
 
   const bar1 = new cliProgress.SingleBar({format: formatter}, cliProgress.Presets.shades_classic);

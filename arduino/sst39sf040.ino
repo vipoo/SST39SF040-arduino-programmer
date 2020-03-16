@@ -8,7 +8,7 @@ const int AddrPins[] = {
   A0, A1, A2, AB3, AB4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18
 };
 
-#define BUFFER_LIMIT 12
+#define BUFFER_LIMIT 24
 
 void setCtrlPins();                                   //Setup control signals
 void setAddrPinsOut();                                //Setup address signals
@@ -157,9 +157,6 @@ void writeFirst10Bytes() {
 byte readData(unsigned long address) {
   byte temp_read;
 
-  //digitalWrite(WE, HIGH);
-  //digitalWrite(OE, HIGH);
-
   setAddressFast(address);
 
   digitalWriteFast(OE, LOW);
@@ -174,7 +171,6 @@ byte readData(unsigned long address) {
 
 void writeByte(byte data, unsigned long address) {
   digitalWriteFast(OE, HIGH);
-  //digitalWriteFast(WE, HIGH);
 
   setAddressFast(address);
   setByte(data);
