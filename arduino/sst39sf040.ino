@@ -8,13 +8,13 @@ const int AddrPins[] = {
   A0, A1, A2, AB3, AB4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18
 };
 
-#define BUFFER_SIZE 128
+#define BUFFER_LIMIT 12
 
 void setCtrlPins();                                   //Setup control signals
 void setAddrPinsOut();                                //Setup address signals
 void setDigitalOut();                                 //Set D0-D7 as outputs
 void setDigitalIn();                                  //Set D0-D7 as inputs
-void setAddress(unsigned long addr);                  //Set Address across A0-A18
+void setAddressFast(unsigned long addr);              //Set Address across A0-A18
 void setByte(byte out);                               //Set data across D0-D7
 byte readByte();                                      //Read byte across D0-D7
 void writeByte(byte data, unsigned long address);     //Write a byte of data at a specific address
@@ -55,19 +55,21 @@ void readSerialCommand(byte in) {
 
     case 'E':
       eraseChip();
-      Serial.println("Chip erased.");
+      Serial.println("\nACK-ERASE-DONE-ACK");
       return;
 
     case 'R':
       setDigitalIn();
 
-      base64Encode(readData, sendChar);
+      //base64Encode(readData, sendChar);
+      binaryEncode(readData, sendChar);
       return;
 
     case 'W': {
       eraseChip();
       Serial.write('A');
-      base64Decode(readChar, programData);
+      //base64Decode(readChar, programData);
+      binaryDecode(readChar, programData);
       Serial.write('A');
       Serial.println("\nACK-DONE-ACK");
       return;
@@ -84,14 +86,14 @@ void readSerialCommand(byte in) {
 
 int wasBelow = false;
 
-char readChar() {
+byte readChar() {
   int count = Serial.available();
 
-  if (count < 12 && !wasBelow) {
+  if (count < BUFFER_LIMIT && !wasBelow) {
     Serial.write('X');
     digitalWrite(LED_BUILTIN, HIGH);
     wasBelow = true;
-  } else if (count >= 12) {
+  } else if (count >= BUFFER_LIMIT) {
     digitalWrite(LED_BUILTIN, LOW);
     wasBelow = false;
   }
@@ -109,7 +111,7 @@ char readChar() {
   return Serial.read();
 }
 
-void sendChar(char t) {
+void sendChar(byte t) {
   Serial.write(t);
 }
 
@@ -171,15 +173,15 @@ byte readData(unsigned long address) {
 }
 
 void writeByte(byte data, unsigned long address) {
-  digitalWrite(OE, HIGH);
-  digitalWrite(WE, HIGH);
+  digitalWriteFast(OE, HIGH);
+  //digitalWriteFast(WE, HIGH);
 
-  setAddress(address);
+  setAddressFast(address);
   setByte(data);
 
-  digitalWrite(WE, LOW);
+  digitalWriteFast(WE, LOW);
   delayMicroseconds(1);
-  digitalWrite(WE, HIGH);
+  digitalWriteFast(WE, HIGH);
 }
 
 int marker = 0;
@@ -231,11 +233,6 @@ byte readByteFast() {
 void setByte(byte out) {
   for (int i = 0; i < 8; i++)
     digitalWrite( DataPins[i], bitRead(out, i) );
-}
-
-void setAddress(unsigned long addr) {
-  for (int i = 0; i < 19; i++)
-    digitalWrite( AddrPins[i], bitRead(addr, i) );
 }
 
 void setAddressFast(unsigned long addr) {
@@ -333,9 +330,6 @@ void setAddressFast(unsigned long addr) {
     digitalWriteFast(A18, HIGH)
   else
     digitalWriteFast(A18, LOW);
-
-
-
 }
 
 void setAddrPinsOut() {
@@ -360,7 +354,7 @@ void setCtrlPins() {
   pinMode(OE, OUTPUT);
   pinMode(CE, OUTPUT);
 
-  digitalWrite(WE, HIGH);
-  digitalWrite(OE, HIGH);
-  digitalWrite(CE, LOW);
+  digitalWriteFast(WE, HIGH);
+  digitalWriteFast(OE, HIGH);
+  digitalWriteFast(CE, LOW);
 }
