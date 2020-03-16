@@ -1,5 +1,9 @@
 #include "digitalWriteFast.h"
 
+#include "pin-assignments.h"
+
+#define BLOCK_LENGTH 1024L * 512
+
 const int DataPins[] = {
   D0, D1, D2, D3, D4, D5, D6, D7
 };
@@ -8,7 +12,14 @@ const int AddrPins[] = {
   A0, A1, A2, AB3, AB4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18
 };
 
-#define BUFFER_LIMIT 24
+#define BUFFER_LIMIT 128
+
+typedef byte readAByte(unsigned long);
+typedef void writeAChar(byte);
+typedef byte readAChar();
+typedef void writeAByte(byte, unsigned long);
+void binaryEncode(readAByte, writeAByte);
+void binaryDecode(readAChar, writeAByte);
 
 void setCtrlPins();                                   //Setup control signals
 void setAddrPinsOut();                                //Setup address signals
@@ -60,23 +71,15 @@ void readSerialCommand(byte in) {
 
     case 'R':
       setDigitalIn();
-
-      //base64Encode(readData, sendChar);
       binaryEncode(readData, sendChar);
       return;
 
     case 'W': {
       eraseChip();
-      Serial.write('A');
-      //base64Decode(readChar, programData);
       binaryDecode(readChar, programData);
-      Serial.write('A');
       Serial.println("\nACK-DONE-ACK");
       return;
     }
-
-    case '=':
-      return;
   }
 
   Serial.print("Error ");
@@ -98,14 +101,12 @@ byte readChar() {
     wasBelow = false;
   }
 
-  int waitSet = 0;
+  if (Serial.available() == 0) {
+    wasBelow = true;
+    Serial.write('Z');
+  }
+
   while(Serial.available() == 0) {
-    delay(3);
-    if (waitSet == 0)
-      Serial.write('Y');
-    waitSet++;
-    if(waitSet > 50)
-      waitSet = 0;
   }
 
   return Serial.read();
@@ -227,8 +228,45 @@ byte readByteFast() {
 }
 
 void setByte(byte out) {
-  for (int i = 0; i < 8; i++)
-    digitalWrite( DataPins[i], bitRead(out, i) );
+  if (bitRead(out, 0))
+    digitalWriteFast(D0, HIGH)
+  else
+    digitalWriteFast(D0, LOW)
+
+  if (bitRead(out, 1))
+    digitalWriteFast(D1, HIGH)
+  else
+    digitalWriteFast(D1, LOW)
+
+  if (bitRead(out, 2))
+    digitalWriteFast(D2, HIGH)
+  else
+    digitalWriteFast(D2, LOW)
+
+  if (bitRead(out, 3))
+    digitalWriteFast(D3, HIGH)
+  else
+    digitalWriteFast(D3, LOW)
+
+  if (bitRead(out, 4))
+    digitalWriteFast(D4, HIGH)
+  else
+    digitalWriteFast(D4, LOW)
+
+  if (bitRead(out, 5))
+    digitalWriteFast(D5, HIGH)
+  else
+    digitalWriteFast(D5, LOW)
+
+  if (bitRead(out, 6))
+    digitalWriteFast(D6, HIGH)
+  else
+    digitalWriteFast(D6, LOW)
+
+  if (bitRead(out, 7))
+    digitalWriteFast(D7, HIGH)
+  else
+    digitalWriteFast(D7, LOW)
 }
 
 void setAddressFast(unsigned long addr) {
@@ -353,4 +391,16 @@ void setCtrlPins() {
   digitalWriteFast(WE, HIGH);
   digitalWriteFast(OE, HIGH);
   digitalWriteFast(CE, LOW);
+}
+
+
+
+void binaryEncode(readAByte reader, writeAChar writer) {
+  for (long i = 0; i < BLOCK_LENGTH; i++)
+    writer(reader(i));
+}
+
+void binaryDecode(readAChar reader, writeAByte writer) {
+  for (long i = 0; i < BLOCK_LENGTH; i++)
+    writer(reader(), i);
 }

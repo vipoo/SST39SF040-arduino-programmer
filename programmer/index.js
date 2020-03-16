@@ -87,20 +87,16 @@ function write(options, {file, verify: verifyAfterWrite}) {
   const data = fs.readFileSync(file)
   const encodedData = data.slice(0, BLOCK_LENGTH)
   spinner1.succeed(`File ${file} loaded OK.  Encoded size: ${encodedData.length}`)
+  spinner1.stop()
 
   const {spinner, connection, ready} = startConnection(options)
-  spinner.stop()
 
   function formatter(options, params, payload) {
-    options.format = `${payload.serialStatus} progress [{bar}] {percentage}% | {value}/{total}`
+    options.format = `${payload.serialStatus || ' '} progress [{bar}] {percentage}% | {value}/{total}`
     return cliDefaultFormatter(options, params, payload)
   }
 
-  const bar1 = new cliProgress.SingleBar({format: formatter}, cliProgress.Presets.shades_classic);
-
-  bar1.start(encodedData.length, 0);
-
-  function sendAllData() {
+  function sendAllData(bar1) {
     let index = 0
     let message = ''
     onSingleChars(connection, char => {
@@ -123,7 +119,12 @@ function write(options, {file, verify: verifyAfterWrite}) {
   }
 
   ready.then(() => {
+    spinner.succeed()//'Rom Ready')
+    const bar1 = new cliProgress.SingleBar({format: formatter}, cliProgress.Presets.shades_classic);
+    bar1.start(encodedData.length, 0);
+
     onFirstMessage(connection, d => d.includes('ACK-DONE-ACK'), () => {
+
       bar1.update(encodedData.length)
       bar1.stop()
       spinner.succeed('Data write completed.')
@@ -134,7 +135,7 @@ function write(options, {file, verify: verifyAfterWrite}) {
         setTimeout(() => verify(options, {file}), 500)
     })
 
-    sendAllData()
+    sendAllData(bar1)
   })
 }
 
