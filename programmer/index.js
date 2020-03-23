@@ -50,7 +50,7 @@ function erase(options) {
 
 function verify(options, {file}) {
   const {spinner, connection, ready} = startConnection(options)
-  spinner.text = `Verifying ROM image against file ${file}`
+  spinner.succeed(`Verifying ROM image against file ${file}`)
   spinner.stop()
 
   const bar1 = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
@@ -64,8 +64,14 @@ function verify(options, {file}) {
 
       if (Buffer.compare(allData, data) === 0)
         spinner.succeed("Verification confirm.")
-      else
+      else {
         spinner.fail("Verification failed.")
+        console.log(allData.length, data.length)
+        for( let i =0; i < BLOCK_LENGTH; i++) {
+          if( allData[i] != data[i])
+            console.log(`Different at byte ${i}.  ${allData[i]}, ${data[i]}`)
+        }
+      }
       connection.close()
     })
 
