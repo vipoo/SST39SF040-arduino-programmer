@@ -14,6 +14,7 @@ const int AddrPins[] = {
 
 #define BUFFER_LIMIT 128
 
+
 typedef byte readAByte(unsigned long);
 typedef void writeAChar(byte);
 typedef byte readAChar();

@@ -67,9 +67,14 @@ function verify(options, {file}) {
       else {
         spinner.fail("Verification failed.")
         console.log(allData.length, data.length)
+        let c = 0;
         for( let i =0; i < BLOCK_LENGTH; i++) {
-          if( allData[i] != data[i])
+          if( allData[i] != data[i]) {
             console.log(`Different at byte ${i}.  ${allData[i]}, ${data[i]}`)
+            c++;
+            if (c > 20)
+              break;
+          }
         }
       }
       connection.close()

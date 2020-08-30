@@ -1,2 +1,4 @@
 .vscode
 programmer/node_modules
+tools
+arduino/bin
