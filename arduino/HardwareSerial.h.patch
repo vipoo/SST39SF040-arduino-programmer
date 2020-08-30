@@ -1,0 +1,10 @@
+30d29
+< 
+50,54c49
+< #if ((RAMEND - RAMSTART) < 1023)
+< #define SERIAL_RX_BUFFER_SIZE 16
+< #else
+< #define SERIAL_RX_BUFFER_SIZE 64
+< #endif
+---
+> #define SERIAL_RX_BUFFER_SIZE 256
