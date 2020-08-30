@@ -1,7 +1,9 @@
 
 # Arduino "shield" for SST39SF040
 
-Project contains the Arduino sketch to flash onto a MEGA 2356 board and associated node script to upload and verify ROM images
+Project contains the Arduino sketch to flash onto a MEGA 2356 board and associated node script to upload and verify ROM images.
+
+Inspired by [mikemint64's blog](https://mint64.home.blog/2018/07/29/parallel-nor-flash-eeprom-programmer-using-an-arduino-part-1-the-sst39sf040-and-planning/)
 
 ## Installing
 
@@ -27,7 +29,7 @@ And then to upload to device -
 
 `make upload` (assumes a COM port mapping of COM3)
 
-### Node Code
+### Programmer Application (nodejs app)
 
 `npm install`
 
@@ -37,7 +39,7 @@ To upload a image to the Arduino, you need to use the sstprogram nodejs applicat
 
 First ensure you have the at least node version 14.3.0
 
-then within the programmer directory.
+then within the `programmer` directory.
 
 `npm clean-install`
 
@@ -59,3 +61,7 @@ on WSL, via windows host
 > File path must be accessible from windows (eg: /mnt/c/Users/mary/Desktop/image.rom)
 
 
+
+## Links
+
+[Easy EDA project](https://easyeda.com/dean.netherton/experiment1)
