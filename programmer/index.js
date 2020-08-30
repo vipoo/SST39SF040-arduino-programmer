@@ -152,7 +152,11 @@ function write(options, {file, verify: verifyAfterWrite}) {
 }
 
 function dispatch(program, action) {
-  return (...args) => action(program, ...args)
+  return (args) => {
+    if (args.file.startsWith('"'))
+      args.file = args.file.slice(1, -1)
+    action(program, args)
+  }
 }
 
 const errorHandler = err => {

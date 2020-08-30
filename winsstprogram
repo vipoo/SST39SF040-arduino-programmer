@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -e
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+WINDIR=$(wslpath -w "$DIR")
+passthru=""
+
+while test $# -gt 0
+do
+    case "$1" in
+        -f) echo
+            shift
+            winpath=$(wslpath -w "$1")
+            passthru="$passthru --file \"$winpath\""
+            ;;
+        --file)
+            shift
+            winpath=$(wslpath -w "$1")
+            passthru="$passthru --file \"$winpath\""
+            ;;
+        *) passthru="$passthru $1"
+            ;;
+    esac
+    shift
+done
+
+/mnt/c/Windows/system32/cmd.exe /C "${WINDIR}\\sstprogram.cmd $passthru"

@@ -30,3 +30,32 @@ And then to upload to device -
 ### Node Code
 
 `npm install`
+
+### Node programmer code
+
+To upload a image to the Arduino, you need to use the sstprogram nodejs application.
+
+First ensure you have the at least node version 14.3.0
+
+then within the programmer directory.
+
+`npm clean-install`
+
+to verify its installed ok
+
+`node index.js --help`
+
+
+## Flashing a rom image
+
+On windows
+
+`sstprogram.cmd --port COM3 write -f image.rom --verify`
+
+on WSL, via windows host
+
+`winsstprogram.cmd --port COM3 write -f image.rom --verify`
+
+> File path must be accessible from windows (eg: /mnt/c/Users/mary/Desktop/image.rom)
+
+

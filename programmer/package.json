@@ -1,12 +1,11 @@
 {
-  "name": "programmer",
+  "name": "SST39SF040Programmer",
   "version": "1.0.0",
-  "description": "",
+  "description": "Application to upload a ROM image to the Arduino 'shield' SST39SF040 Rom",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Dean Netherton",
   "type": "module",
   "license": "ISC",
   "dependencies": {
