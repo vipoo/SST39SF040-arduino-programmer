@@ -11,9 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "blessed": "^0.1.81",
-    "cli-progress": "^3.6.0",
+    "cli-progress": "^3.8.2",
     "commander": "^4.1.1",
-    "ora": "^4.0.3",
-    "serialport": "^8.0.7"
+    "ora": "^4.1.1",
+    "serialport": "^8.0.8"
   }
 }

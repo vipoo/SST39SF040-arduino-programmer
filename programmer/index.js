@@ -2,7 +2,6 @@ import commander from 'commander'
 import fs from 'fs'
 import ora from 'ora'
 import cliProgress from 'cli-progress'
-import cliDefaultFormatter from 'cli-progress/lib/formatter.js'
 import {BLOCK_LENGTH, BUFFER_SIZE} from './constants.js'
 import {startConnection, onMessage, captureData, onFirstMessage, connectionWrite, onSingleChars} from './communications.js'
 
@@ -94,32 +93,38 @@ function verify(options, {file}) {
 }
 
 function write(options, {file, verify: verifyAfterWrite}) {
-  const spinner1 = ora(`Reading file ${file}`).start();
   const data = fs.readFileSync(file)
-  const encodedData = data.slice(0, BLOCK_LENGTH)
-  spinner1.succeed(`File ${file} loaded OK.  Encoded size: ${encodedData.length}`)
-  spinner1.stop()
 
   const {spinner, connection, ready} = startConnection(options)
-
-  function formatter(options, params, payload) {
-    options.format = `${payload.serialStatus || ' '} progress [{bar}] {percentage}% | {value}/{total}`
-    return cliDefaultFormatter(options, params, payload)
+  if( data.length !== BLOCK_LENGTH) {
+    spinner.fail("Incorrect file size.  Required file size of ${BLOCK_LENGTH}")
+    return false;
   }
+  spinner.succeed(`File ${file} loaded OK.  Size: ${data.length}`)
+  spinner.stop()
+
+  const bar1 = new cliProgress.SingleBar({etaBuffer: 20}, cliProgress.Presets.shades_classic);
+  bar1.start(BLOCK_LENGTH, 0);
+
+  let intervalHandle
 
   function sendAllData(bar1) {
     let index = 0
     let message = ''
+    intervalHandle = setInterval(() => {
+      if (index < data.length)
+        bar1.update(index)
+    }, 50)
+
     onSingleChars(connection, char => {
-      if (index === encodedData.length)
+      if (index === data.length)
         return true
 
       for(let i = 0; i < BUFFER_SIZE; i++) {
-        if (index == encodedData.length)
+        if (index == data.length)
           break
 
-        bar1.update(index, {serialStatus: char})
-        connection.write(encodedData.subarray(index, index + 1))
+        connection.write(data.subarray(index, index + 1))
         index++
       }
 
@@ -129,14 +134,10 @@ function write(options, {file, verify: verifyAfterWrite}) {
     connection.write('W')
   }
 
-  ready.then(() => {
-    spinner.succeed()//'Rom Ready')
-    const bar1 = new cliProgress.SingleBar({format: formatter}, cliProgress.Presets.shades_classic);
-    bar1.start(encodedData.length, 0);
-
+  ready.then(async () => {
     onFirstMessage(connection, d => d.includes('ACK-DONE-ACK'), () => {
-
-      bar1.update(encodedData.length)
+      clearInterval(intervalHandle);
+      bar1.update(data.length)
       bar1.stop()
       spinner.succeed('Data write completed.')
       connection.close()
