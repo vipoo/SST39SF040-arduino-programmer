@@ -85,8 +85,8 @@ function verify(options, {file}) {
   let length = 0
   connection.on('data', data => {
     length += data.length
-    if(data.length > BLOCK_LENGTH)
-      data.length = BLOCK_LENGTH
+    if(length > BLOCK_LENGTH)
+      length = BLOCK_LENGTH
 
     bar1.update(length)
   })
@@ -174,7 +174,7 @@ process.on('unhandledRejection', errorHandler)
 
 commander
   .requiredOption('-p, --port <port>', 'port (eg: /dev/ttyS4)')
-  .option('-b, --baud <baud>', 'baud rate', 115200)
+  .option('-b, --baud <baud>', 'baud rate', 250000)
 
 commander
   .command('read')

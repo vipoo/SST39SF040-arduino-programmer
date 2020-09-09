@@ -15,12 +15,8 @@ const int AddrPins[] = {
 #define BUFFER_LIMIT 128
 
 
-typedef byte readAByte(unsigned long);
-typedef void writeAChar(byte);
-typedef byte readAChar();
-typedef void writeAByte(byte, unsigned long);
-void binaryEncode(readAByte, writeAByte);
-void binaryDecode(readAChar, writeAByte);
+void binaryEncode();
+void binaryDecode();
 
 void setCtrlPins();                                   //Setup control signals
 void setAddrPinsOut();                                //Setup address signals
@@ -28,7 +24,6 @@ void setDigitalOut();                                 //Set D0-D7 as outputs
 void setDigitalIn();                                  //Set D0-D7 as inputs
 void setAddressFast(unsigned long addr);              //Set Address across A0-A18
 void setByte(byte out);                               //Set data across D0-D7
-byte readByte();                                      //Read byte across D0-D7
 void writeByte(byte data, unsigned long address);     //Write a byte of data at a specific address
 void programData(byte data, unsigned long address);   //Executes the program command sequence
 byte readData(unsigned long address);                 //Read data as specific address
@@ -41,7 +36,7 @@ void setup()
   setCtrlPins();
   setAddrPinsOut();
 
-  Serial.begin(115200);
+  Serial.begin(250000);
   delay(2);
   Serial.println("ACK-READY-ACK");
   pinMode(LED_BUILTIN, OUTPUT);
@@ -72,12 +67,12 @@ void readSerialCommand(byte in) {
 
     case 'R':
       setDigitalIn();
-      binaryEncode(readData, sendChar);
+      binaryEncode();
       return;
 
     case 'W': {
       eraseChip();
-      binaryDecode(readChar, programData);
+      binaryDecode();
       Serial.println("\nACK-DONE-ACK");
       return;
     }
@@ -144,6 +139,8 @@ void readFirst10Bytes() {
 }
 
 void writeFirst10Bytes() {
+  setDigitalOut();
+
   programData('a', 0L);
   programData('b', 1L);
   programData('c', 2L);
@@ -156,13 +153,16 @@ void writeFirst10Bytes() {
   programData('j', 9L);
 }
 
+void waitABit() {
+
+}
+
 byte readData(unsigned long address) {
   byte temp_read;
 
   setAddressFast(address);
 
   digitalWriteFast(OE, LOW);
-  delayMicroseconds(1);
 
   temp_read = readByteFast();
 
@@ -178,32 +178,19 @@ void writeByte(byte data, unsigned long address) {
   setByte(data);
 
   digitalWriteFast(WE, LOW);
-  delayMicroseconds(1);
+  waitABit();
   digitalWriteFast(WE, HIGH);
 }
 
-int marker = 0;
-
 void programData(byte data, unsigned long address) {
-  setDigitalOut();
-
   writeByte(0xAA, 0x5555);
   writeByte(0x55, 0x2AAA);
   writeByte(0xA0, 0x5555);
   writeByte(data, address);
 
-  delayMicroseconds(30);
+  delayMicroseconds(10);
 }
 
-byte readByte() {
-  byte temp_in = 0;
-
-  for (int i = 0; i < 8; i++)
-    if (digitalRead(DataPins[i]))
-      bitSet(temp_in, i);
-
-  return temp_in;
-}
 
 byte readByteFast() {
   byte temp_in = 0;
@@ -395,13 +382,14 @@ void setCtrlPins() {
 }
 
 
-
-void binaryEncode(readAByte reader, writeAChar writer) {
+void binaryEncode() {
   for (long i = 0; i < BLOCK_LENGTH; i++)
-    writer(reader(i));
+    sendChar(readData(i));
 }
 
-void binaryDecode(readAChar reader, writeAByte writer) {
+void binaryDecode() {
+  setDigitalOut();
+
   for (long i = 0; i < BLOCK_LENGTH; i++)
-    writer(reader(), i);
+    programData(readChar(), i);
 }
